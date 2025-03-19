@@ -3,7 +3,6 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 import tennis_data
-import dynamic_model1 as dm1
 
 class MatchStats:
     def __init__(self, raw_data, match_to_examine):
@@ -18,9 +17,16 @@ class MatchStats:
         self.names = [self.player1_name, self.player2_name]
         self.surnames = [self.player1_surname, self.player2_surname]
         
-        # Identify points where sets change
-        self.set_change_points = np.where(np.diff(self.match['set_no']) > 0)[0]
-        self.set_change_points = np.append(self.set_change_points, self.match.shape[0]-1)
+        
+        # mark the final point of the final set as a set_victor like 
+        # the other set-finishing events.
+        #v = self.match['set_victor']
+        #v.iloc[-1] = self.match['point_victor'].iloc[-1]
+        if self.match.loc[self.match.index[-1],'set_victor'] ==0:
+            self.match.loc[self.match.index[-1],'set_victor'] = self.match['point_victor'].iloc[-1]
+        
+        # Identify points where sets **finish**
+        self.set_finish_points = np.where(self.match['set_victor']!=0)[0]
         
         # Match winner is the winner of final set
         self.match_winner = self.match['set_victor'].iloc[-1]
@@ -60,10 +66,11 @@ class SetWinnerModel(MatchStats):
         
         # First set prediction is simply the winner of set 1
         # For subsequent sets, predict based on the previous set's winner
-        predictions = np.full(len(set_winners), np.nan)
-        for i in range(1, len(set_winners)):
-            predictions[i] = set_winners[i-1]
-            
+        #predictions = np.full(len(set_winners), np.nan)
+        #for i in range(len(set_winners)):
+        #    predictions[i] = set_winners[i]
+        predictions = set_winners
+        
         return predictions
 
 
@@ -90,16 +97,18 @@ class CumulativeSetWinnerModel(MatchStats):
         to predict the winner of the match.
         '''
         # Initialize predictions array
-        predictions = np.full(len(self.set_victors), np.nan)
+        #predictions = np.full(len(self.set_victors), np.nan)
+        predictions = np.full(5, np.nan)
         
         # First set has no previous information
         # For all other sets, make predictions based on cumulative set wins
         previous_leader = None
         
-        for i in range(1, len(self.set_victors)):
+        #for i in range(1, len(self.set_victors)):
+        for i in range(len(self.set_victors)):
             # Check who's leading in sets up to this point
-            p1_sets = self.p1_cumulative[i-1]
-            p2_sets = self.p2_cumulative[i-1]
+            p1_sets = self.p1_cumulative[i]
+            p2_sets = self.p2_cumulative[i]
             
             if p1_sets > p2_sets:
                 predictions[i] = 1
@@ -137,15 +146,17 @@ class CumulativePointWinnerModel(MatchStats):
         Output: Prediction at the end of each set to predict the winner of the match.
         '''
         # Get set endpoints
-        set_endpoints = self.set_change_points
+        #set_endpoints = self.set_change_points
+        set_endpoints = self.set_finish_points
         
         # Initialize predictions array
-        predictions = np.full(len(self.set_victors), np.nan)
+        #predictions = np.full(len(self.set_victors), np.nan)
+        predictions = np.full(5, np.nan)
         previous_leader = None
         
-        for i in range(1, len(self.set_victors)):
+        for i in range(len(set_endpoints)):
             # Find the point index at the end of previous set
-            previous_set_end_idx = set_endpoints[i-1]
+            previous_set_end_idx = set_endpoints[i]
             
             # Check who's leading in points up to this point
             if previous_set_end_idx < len(self.p1_point_cumulative):
@@ -188,15 +199,17 @@ class CumulativeGameWinnerModel(MatchStats):
         Output: Prediction at the end of each set to predict the winner of the match.
         '''
         # Get set endpoints
-        set_endpoints = self.set_change_points
+        #set_endpoints = self.set_change_points
+        set_endpoints = self.set_finish_points
         
         # Initialize predictions array
-        predictions = np.full(len(self.set_victors), np.nan)
+        #predictions = np.full(len(self.set_victors), np.nan)
+        predictions = np.full(5, np.nan)
         previous_leader = None
         
-        for i in range(1, len(self.set_victors)):
+        for i in range(len(set_endpoints)):
             # Find the game index at the end of previous set
-            previous_set_end_idx = set_endpoints[i-1]
+            previous_set_end_idx = set_endpoints[i]
             
             # Check who's leading in games up to this point
             if previous_set_end_idx < len(self.p1_game_cumulative):
@@ -239,15 +252,18 @@ class CumulativeUnfErrModel(MatchStats):
         Output: Prediction at the end of each set to predict the winner of the match.
         '''
         # Get set endpoints
-        set_endpoints = self.set_change_points
+        #set_endpoints = self.set_change_points
+        set_endpoints = self.set_finish_points
         
         # Initialize predictions array
-        predictions = np.full(len(self.set_victors), np.nan)
+        #predictions = np.full(len(self.set_victors), np.nan)
+        predictions = np.full(5, np.nan)
         previous_leader = None
         
-        for i in range(1, len(self.set_victors)):
+        #for i in range(1, len(self.set_victors)):
+        for i in range(len(set_endpoints)):
             # Find the point index at the end of previous set
-            previous_set_end_idx = set_endpoints[i-1]
+            previous_set_end_idx = set_endpoints[i]
             
             # Check who has fewer errors up to this point
             if previous_set_end_idx < len(self.p1_error_cumulative):
@@ -266,8 +282,12 @@ class CumulativeUnfErrModel(MatchStats):
         
         return predictions
 
-MAX_SETS = 4
+MAX_SETS = 5
 def evaluate_models(df_raw, matches):
+    # NOTE: importing dynamic_model1 (dm1) would be a circular reference, normally,
+    # since it inherits the MatchStats class to build itself.
+    import dynamic_model1 as dm1
+    
     # Store all models
     all_models = {
         "SetWinnerModel": SetWinnerModel,
@@ -303,8 +323,8 @@ def evaluate_models(df_raw, matches):
                 # Store results
                 num_sets = min(len(stats.set_victors), MAX_SETS)
                 for i in range(num_sets):
-                    if i+1 < len(predictions) and not np.isnan(predictions[i+1]):
-                        is_correct = int(predictions[i+1] == stats.winner_id)
+                    if not np.isnan(predictions[i]):
+                        is_correct = int(predictions[i] == stats.winner_id)
                         all_results[i, j, k] = is_correct
                         count_correct[model_name][i] += is_correct
                         reach_count[model_name][i] += 1
@@ -338,14 +358,15 @@ def evaluate_models(df_raw, matches):
 
 
 if __name__ == "__main__":
-        
-    df_raw = tennis_data.load_2022()
+    import dynamic_model1 as dm1
+    
+    df_raw = tennis_data.load_2024()
     matches = df_raw['match_id'].unique()
         
     # Print results for specific match
     my_match = matches[1]
     stats = MatchStats(df_raw, my_match)
-        
+    
     print("Actual winner:", stats.winner_id)
         
     print("\nModel predictions:")
@@ -399,14 +420,13 @@ if __name__ == "__main__":
                     'Set': [set_labels[i]],
                     'Percentage': [set_acc * 100]
                 })], ignore_index=True)
-        
-    plt.figure(figsize=(12, 7))
-    sns.lineplot(data=plot_data, x='Set', y='Percentage', hue='Model', marker='o')
-    plt.title('Model Prediction Accuracy by Set')
-    plt.ylim(0, 100)
-    plt.xlabel('Set')
-    plt.ylabel('Percentage Correct')
-    plt.legend(title='Model')
-    plt.grid(True)
-    plt.show()
+    
+    fig,ax = plt.subplots(figsize=(12,7))
+    #plt.figure(figsize=(12, 7))
+    sns.lineplot(data=plot_data, x='Set', y='Percentage', hue='Model', marker='o', ax=ax)
+    ax.set(title='Model Prediction Accuracy by Set', ylim=[0,100], xlabel='Set', ylabel='Percentage Correct')
+
+    ax.legend(title='Model')
+    ax.grid(True)
+    fig.show()
     

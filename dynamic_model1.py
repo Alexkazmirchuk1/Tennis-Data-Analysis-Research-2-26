@@ -451,14 +451,16 @@ class DynamicTennisModel:
         '''
         from matplotlib import ticker
         
-        set_change_points = list([0, *self.set_change_points])
+        #set_change_points = list([0, *self.set_change_points])
+        set_finish_points = self.set_finish_points
+        
         game_change_points = np.where(np.diff(self.match['game_no'])>0)[0]
         
-        ax.xaxis.set_major_locator(ticker.FixedLocator(set_change_points))
+        ax.xaxis.set_major_locator(ticker.FixedLocator(set_finish_points))
         ax.tick_params(which='major',length=8)
         ax.xaxis.grid(True, which='major', linestyle='--', color='#333')
         
-        ax.set_xticklabels([f"Set {_i+1}" for _i in range(len(set_change_points))])
+        ax.set_xticklabels([f"Set {_i+1}" for _i in range(len(set_finish_points))])
         #ax.tick_params(axis="x", ha="left")
         plt.setp(ax.get_xticklabels(), horizontalalignment='left')
         
@@ -466,7 +468,7 @@ class DynamicTennisModel:
         ax.tick_params(which='minor',length=4)
         ax.xaxis.grid(False, which='minor')
         
-        #for index, _x in enumerate(set_change_points):
+        #for index, _x in enumerate(set_finish_points):
         #    #ax.axvline(x=_x, color='#333', linestyle='--', zorder=-1000)
         #    ax.text(_x, ax.get_ylim()[0], f"Set {index+1}", 
         #    va='bottom', ha='left', rotation=90, 
@@ -516,8 +518,8 @@ class DynamicTennisModel:
             (0 = incorrectly predicted, 1 = correctly predicted).
         '''
         set_change_values = [
-            self.p1_momentum[self.set_change_points], 
-            self.p2_momentum[self.set_change_points]
+            self.p1_momentum[self.set_finish_points], 
+            self.p2_momentum[self.set_finish_points]
         ]
         
         # pad result_array with NaN in matches with fewer than five sets.
