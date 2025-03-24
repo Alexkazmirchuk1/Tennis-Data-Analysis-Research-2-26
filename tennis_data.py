@@ -125,3 +125,38 @@ def load_2024(FILE=DATA_FOLDER+'2024-wimbledon-data.csv', exclusions=[]):
     df['p2_lastname'] = df['player2'].str.split().str[1:].str.join(' ')
     
     return df
+
+def clean_data(mydf, min_sets_won=3, max_sets=5, verbose=False):
+    '''
+    Given a dataset presumed to come from the tennis data sources, this does 
+    the following:
+        1. Fills the final row of 'set_victor' with the corresponding 'point_winner'
+            under the assumption that those games completed and the final point of a 
+            match is always going to the victor.
+        2. Excludes any match with fewer than min_sets_won (default: 3)
+        3. Excludes any match with greater than max_sets (default: 5).
+    '''
+    rebuild = []
+    for m,df_sub in mydf.groupby('match_id'):
+        # fill final value
+        if df_sub['set_victor'].iloc[-1] ==0:
+            w = df_sub['point_victor'].iloc[-1]
+            df_sub.loc[df_sub.index[-1], 'set_victor'] = w
+            if verbose:
+                print(f"match_id {m}: final set_victor 0 imputed with {w}.")
+        # skip if insufficient data (presumed cancelled game)
+        set_result = df_sub['set_victor'].value_counts()
+        if set_result.get(1,0)<min_sets_won and set_result.get(2,0)<min_sets_won:
+            if verbose:
+                print(f"Skipping match_id {m} for insufficient sets won by either player.")
+            continue
+        if set_result.get(1,0) + set_result.get(2,0) > max_sets:
+            if verbose:
+                print(f"Skipping match_id {m} for going past {max_sets} sets.")
+            continue
+        
+        rebuild.append(df_sub)
+    
+    _df = pd.concat(rebuild)
+    return _df
+    

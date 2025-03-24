@@ -61,16 +61,7 @@ class SetWinnerModel(MatchStats):
         Output: prediction at the end of set 1,2,3,4,5 (if applicable) 
         to predict the winner of the match.
         '''
-        # Get all set victors
-        set_winners = self.set_victors.values
-        
-        # First set prediction is simply the winner of set 1
-        # For subsequent sets, predict based on the previous set's winner
-        #predictions = np.full(len(set_winners), np.nan)
-        #for i in range(len(set_winners)):
-        #    predictions[i] = set_winners[i]
-        predictions = set_winners
-        
+        predictions = self.set_victors.values
         return predictions
 
 
@@ -358,10 +349,13 @@ def evaluate_models(df_raw, matches):
 
 
 if __name__ == "__main__":
+    # Example on just one year of data.
     import dynamic_model1 as dm1
     
     df_raw = tennis_data.load_2024()
-    matches = df_raw['match_id'].unique()
+    df = tennis_data.clean_data(df_raw, verbose=True)
+    
+    matches = df['match_id'].unique()
         
     # Print results for specific match
     my_match = matches[1]
@@ -375,7 +369,7 @@ if __name__ == "__main__":
     model1 = SetWinnerModel(df_raw, my_match)
     model1.fit()
     model_results["SetWinnerModel"] = model1.prediction()
-        
+    
     model2 = CumulativeSetWinnerModel(df_raw, my_match)
     model2.fit()
     model_results["CumulativeSetWinnerModel"] = model2.prediction()
