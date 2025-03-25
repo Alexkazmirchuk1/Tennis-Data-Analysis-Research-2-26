@@ -33,7 +33,7 @@ class MatchStats:
         
         # Extract various victor arrays
         self.set_victors = self.match['set_victor'][self.match['set_victor'] != 0]
-        self.point_victors = self.match['point_victor'][self.match['point_victor'] != 0]
+        self.point_victors = self.match['point_victor'].values # don't filter 0 here
         self.game_victors = self.match['game_victor'].values
         
         # Properly track unforced errors (create separate arrays for each player)
@@ -51,6 +51,7 @@ class SetWinnerModel(MatchStats):
     '''
     def __init__(self, raw_data, match_to_examine):
         super().__init__(raw_data, match_to_examine)
+        self.short_name = 'Set Winner'
     
     def fit(self):
         # No processing needed for this model
@@ -75,6 +76,8 @@ class CumulativeSetWinnerModel(MatchStats):
     '''
     def __init__(self, raw_data, match_to_examine):
         super().__init__(raw_data, match_to_examine)
+        self.short_name = 'Cumul. Set Winner'
+        
         self.p1_cumulative = None
         self.p2_cumulative = None
     
@@ -101,6 +104,9 @@ class CumulativeSetWinnerModel(MatchStats):
             p1_sets = self.p1_cumulative[i]
             p2_sets = self.p2_cumulative[i]
             
+            if len(predictions)<= i:
+                import pdb
+                pdb.set_trace()
             if p1_sets > p2_sets:
                 predictions[i] = 1
                 previous_leader = 1
@@ -124,44 +130,44 @@ class CumulativePointWinnerModel(MatchStats):
     '''
     def __init__(self, raw_data, match_to_examine):
         super().__init__(raw_data, match_to_examine)
+        self.short_name = 'Cumul. Point Winner'
+        
         self.p1_point_cumulative = None
         self.p2_point_cumulative = None
     
     def fit(self):
         # Calculate cumulative points won by each player
-        self.p1_point_cumulative = np.cumsum(self.point_victors.values == 1)
-        self.p2_point_cumulative = np.cumsum(self.point_victors.values == 2)
+        self.p1_point_cumulative = np.cumsum(self.point_victors == 1)
+        self.p2_point_cumulative = np.cumsum(self.point_victors == 2)
     
     def prediction(self):
         '''
         Output: Prediction at the end of each set to predict the winner of the match.
         '''
-        # Get set endpoints
-        #set_endpoints = self.set_change_points
-        set_endpoints = self.set_finish_points
-        
-        # Initialize predictions array
-        #predictions = np.full(len(self.set_victors), np.nan)
         predictions = np.full(5, np.nan)
         previous_leader = None
         
-        for i in range(len(set_endpoints)):
-            # Find the point index at the end of previous set
-            previous_set_end_idx = set_endpoints[i]
+        for i in range(len(self.set_finish_points)):
+            # Find the cumulative point values at the end of the set and compare.
+            idx = self.set_finish_points[i]
+            if idx>len(self.p1_point_cumulative):
+                import pdb
+                pdb.set_trace()
+            p1_points = self.p1_point_cumulative[idx]
+            p2_points = self.p2_point_cumulative[idx]
             
-            # Check who's leading in points up to this point
-            if previous_set_end_idx < len(self.p1_point_cumulative):
-                p1_points = self.p1_point_cumulative[previous_set_end_idx]
-                p2_points = self.p2_point_cumulative[previous_set_end_idx]
-                
-                if p1_points > p2_points:
-                    predictions[i] = 1
-                    previous_leader = 1
-                elif p2_points > p1_points:
-                    predictions[i] = 2
-                    previous_leader = 2
+            if p1_points > p2_points:
+                predictions[i] = 1
+                previous_leader = 1
+            elif p2_points > p1_points:
+                predictions[i] = 2
+                previous_leader = 2
+            else:
+                # If tied, use previous leader if available...
+                # otherwise we'll use the set winner.
+                if previous_leader is None:
+                    predictions[i] = self.match['set_victor'].iloc[idx]
                 else:
-                    # If tied, use previous leader if available
                     predictions[i] = previous_leader
         
         return predictions
@@ -177,6 +183,8 @@ class CumulativeGameWinnerModel(MatchStats):
     '''
     def __init__(self, raw_data, match_to_examine):
         super().__init__(raw_data, match_to_examine)
+        self.short_name = 'Cumul. Game Winner'
+        
         self.p1_game_cumulative = None
         self.p2_game_cumulative = None
     
@@ -189,18 +197,14 @@ class CumulativeGameWinnerModel(MatchStats):
         '''
         Output: Prediction at the end of each set to predict the winner of the match.
         '''
-        # Get set endpoints
-        #set_endpoints = self.set_change_points
-        set_endpoints = self.set_finish_points
-        
         # Initialize predictions array
         #predictions = np.full(len(self.set_victors), np.nan)
         predictions = np.full(5, np.nan)
         previous_leader = None
         
-        for i in range(len(set_endpoints)):
+        for i in range(len(self.set_finish_points)):
             # Find the game index at the end of previous set
-            previous_set_end_idx = set_endpoints[i]
+            previous_set_end_idx = self.set_finish_points[i]
             
             # Check who's leading in games up to this point
             if previous_set_end_idx < len(self.p1_game_cumulative):
@@ -230,6 +234,8 @@ class CumulativeUnfErrModel(MatchStats):
     '''
     def __init__(self, raw_data, match_to_examine):
         super().__init__(raw_data, match_to_examine)
+        self.short_name = 'Cumul. Unf. Error'
+        
         self.p1_error_cumulative = None
         self.p2_error_cumulative = None
     
@@ -242,19 +248,15 @@ class CumulativeUnfErrModel(MatchStats):
         '''
         Output: Prediction at the end of each set to predict the winner of the match.
         '''
-        # Get set endpoints
-        #set_endpoints = self.set_change_points
-        set_endpoints = self.set_finish_points
-        
         # Initialize predictions array
         #predictions = np.full(len(self.set_victors), np.nan)
         predictions = np.full(5, np.nan)
         previous_leader = None
         
         #for i in range(1, len(self.set_victors)):
-        for i in range(len(set_endpoints)):
+        for i in range(len(self.set_finish_points)):
             # Find the point index at the end of previous set
-            previous_set_end_idx = set_endpoints[i]
+            previous_set_end_idx = self.set_finish_points[i]
             
             # Check who has fewer errors up to this point
             if previous_set_end_idx < len(self.p1_error_cumulative):

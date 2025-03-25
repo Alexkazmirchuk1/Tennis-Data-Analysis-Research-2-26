@@ -57,33 +57,6 @@ def get_serve_probability(match_data, player):
     
     server_no = match_data['server'].values
     point_victor = match_data['point_victor'].values
-
-    # Purpose: build a list-like of a cumulative rate of winning the point when 
-    # the player serves. For example, if the player has served twice and won 
-    # one of those points, the value would be 1/2=0.5. If on the following 
-    # point the player serves again, and wins the point again, the value gets 
-    # updated to (1+1)/(2+1) = 0.66. If on the following point they serve and 
-    # lose, the following value is (2+0)/(3+1) = 0.5.
-    #
-    # The value is carried forward on any points the player is not serving on.
-    
-    #serve_point_won = 0
-    #num_serves = 0
-    #p_array = []
-    #
-    #for index in range(len(server_no)):
-    #    if player == server_no[index]:
-    #        num_serves += 1
-    #
-    #        if player == point_victor[index]:
-    #            serve_point_won += 1
-    #
-    #    if num_serves == 0:
-    #        p_array.append(0)
-    #    else:
-    #        p_array.append(serve_point_won / num_serves)
-    #
-    #p_array = np.array(p_array)
     
     player_is_server = (server_no == player)
     player_served_and_won = np.logical_and(player_is_server, point_victor == player)
@@ -270,12 +243,8 @@ class DynamicTennisModel:
         
         # Collect basic information about the match
         MatchStats.__init__(self, raw_data, match_to_examine)
+        self.short_name = 'Dynamic Model'
         
-        ###
-        #self.max_length = 0
-        #self.p1_momentum = []
-        #self.p2_momentum = []
-
         self.sv = sv
         self.rv = rv
         self.qv = qv
@@ -327,16 +296,10 @@ class DynamicTennisModel:
         Outputs:
             pg1_array, pg2_array : arrays; 
         '''
-        #pg1_array = []
-        #pg2_array = []
-        #
-        #for index in range(self.max_length):
-        #    pg1, pg2 = prob_win_independent_game(p1_probability[index], p2_probability[index])
-        #
-        #    pg1_array.append(pg1)
-        #    pg2_array.append(pg2)
-
-        pg1_array, pg2_array = prob_win_independent_game(p1_probability[:self.max_length], p2_probability[:self.max_length])
+        pg1_array, pg2_array = prob_win_independent_game(
+            p1_probability[:self.max_length], 
+            p2_probability[:self.max_length]
+        )
 
         if debug:
             print("Probability of winning the game")
@@ -358,13 +321,6 @@ class DynamicTennisModel:
         Outputs:
             ps1_array, ps2_array : arrays; ......
         '''
-        #ps1_array = []
-        #ps2_array = []
-        #
-        #for index in range(self.max_length):
-        #    ps1_array.append(prob_win_set(pg1_array[index]))
-        #    ps2_array.append(prob_win_set(pg2_array[index]))
-
         ps1_array = prob_win_set(pg1_array[:self.max_length])
         ps2_array = prob_win_set(pg2_array[:self.max_length])
 
@@ -389,20 +345,7 @@ class DynamicTennisModel:
         Outputs:
             pm1_array, pm2_array : arrays; ......
         '''
-        #pm1_array = []
-        #pm2_array = []
-
-        #pm1_array = np.zeros(self.max_length)
-        #pm2_array = np.zeros(self.max_length)
-        # 
-        #for index in range(self.max_length):
-        #    #pm1_array.append(prob_win_match(ps1_array[index]))
-        #    #pm2_array.append(prob_win_match(ps2_array[index]))
-        #    pm1_array[index] = prob_win_match(ps1_array[index])
-        #    pm2_array[index] = prob_win_match(ps2_array[index])
-        
-        # Since the above calculation is a non-recursive polynomial calculation, 
-        # calculate them with array arithmetic.
+        # Calculate values with array arithmetic (entrywise).
         pm1_array = prob_win_match(ps1_array[:self.max_length])
         pm2_array = prob_win_match(ps2_array[:self.max_length])
 
@@ -467,13 +410,6 @@ class DynamicTennisModel:
         ax.xaxis.set_minor_locator(ticker.FixedLocator(game_change_points))
         ax.tick_params(which='minor',length=4)
         ax.xaxis.grid(False, which='minor')
-        
-        #for index, _x in enumerate(set_finish_points):
-        #    #ax.axvline(x=_x, color='#333', linestyle='--', zorder=-1000)
-        #    ax.text(_x, ax.get_ylim()[0], f"Set {index+1}", 
-        #    va='bottom', ha='left', rotation=90, 
-        #    bbox={'facecolor':'#fff', 'edgecolor':'#333', 'boxstyle':'square,pad=0.2'})
-        
         
         for _k in range(2):
             for spine in ['bottom', 'top', 'right']:
@@ -544,13 +480,6 @@ class DynamicTennisModel:
             This flag is automatically passed forward to intermediate functions.
         Outputs: None
         '''
-        # possible optimizable?
-        #self.p1_momentum, self.p2_momentum = self.update_momentum(
-        #    *self.get_match_probabilities( # 4
-        #        *self.get_set_probabilities( # 3
-        #            *self.get_game_probabilities( # 2
-        #                *self.get_serve_probabilities(debug), debug), debug), debug), debug) # 1
-
         a = self.get_serve_probabilities(debug)
         b = self.get_game_probabilities(*a, debug)
         c = self.get_set_probabilities(*b, debug)
