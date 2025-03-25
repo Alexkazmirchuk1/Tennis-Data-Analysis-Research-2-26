@@ -85,5 +85,6 @@ if __name__=="__main__":
     for i,l in enumerate(['Unf. error differential', 'Point differential', 'Game differential']):
         clean_aucroc_plot(df_summary['p2_wins'], df_summary[l], l, myax=ax[i])
     
+    fig.savefig('output/end_game_correlates.pdf', bbox_inches='tight')
     fig.show()
     

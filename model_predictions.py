@@ -77,5 +77,11 @@ df_predictions['set_no'] = df_predictions['set_no'].astype(int)
 #
 df_predictions['matches_until_end'] = df_predictions['total_sets'] - df_predictions['set_no']
 
-df_predictions['match_id']
-
+if True:
+    import datetime
+    dt = datetime.datetime.now()
+    tstamp = dt.strftime('%d-%b-%Y_%H:%M').upper()
+    
+    df_predictions.to_csv(f'output/model_predictions_{tstamp}.csv', index=None)
+    df_predictions.to_parquet(f'output/model_predictions_{tstamp}.pq', index=None)
+    
