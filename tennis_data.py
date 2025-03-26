@@ -126,10 +126,14 @@ def load_2024(FILE=DATA_FOLDER+'2024-wimbledon-data.csv', exclusions=[]):
     
     return df
 
-def clean_data(mydf, min_sets_won=3, max_sets=5, verbose=False):
+def clean_data(mydf, min_sets_won=2, max_sets=5, verbose=False):
     '''
     Given a dataset presumed to come from the tennis data sources, this does 
     the following:
+        
+        0. Adds a column titled "program" for the program - M (men's) or W (women's)
+            inferred from the original match_id (digit after "wimbledon-" being 1 or 2 
+            respectively); or 'NA' if other/missing.
         1. Fills the final row of 'set_victor' with the corresponding 'point_winner'
             under the assumption that those games completed and the final point of a 
             match is always going to the victor.
@@ -137,7 +141,16 @@ def clean_data(mydf, min_sets_won=3, max_sets=5, verbose=False):
         3. Excludes any match with greater than max_sets (default: 5).
     '''
     rebuild = []
+    mapping = {'1': 'M', '2': 'W'}
+    programs = []
     for m,df_sub in mydf.groupby('match_id'):
+        # get the men's/women's program
+        try:
+            match_id_num = m.split('-')[-1]
+            program = mapping.get(match_id_num[0], 'NA')
+        except:
+            program = 'NA'
+        
         # fill final value
         if df_sub['set_victor'].iloc[-1] ==0:
             w = df_sub['point_victor'].iloc[-1]
@@ -154,9 +167,10 @@ def clean_data(mydf, min_sets_won=3, max_sets=5, verbose=False):
             if verbose:
                 print(f"Skipping match_id {m} for going past {max_sets} sets.")
             continue
-        
+        programs.append([program]*df_sub.shape[0])
         rebuild.append(df_sub)
     
     _df = pd.concat(rebuild)
+    _df['program'] = sum(programs,[]) # concatenate list of lists
     return _df
     
