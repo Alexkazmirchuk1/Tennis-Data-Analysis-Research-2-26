@@ -10,6 +10,12 @@ df_2024 = td.load_2024()
 
 # join data
 df = pandas.concat([df_2021, df_2022, df_2023, df_2024])
+df = td.clean_data(df, min_sets_won=2)
+
+def get_rocauc(y_true, y_pred):
+    fpr,tpr,_ = metrics.roc_curve(y_true, y_pred)
+    auc = np.trapz(tpr,fpr)
+    return fpr,tpr,auc
 
 def clean_aucroc_plot(y_true, y_pred, predictor_str, myax=None):
     from matplotlib import pyplot as plt
@@ -17,9 +23,8 @@ def clean_aucroc_plot(y_true, y_pred, predictor_str, myax=None):
     
     if ax is None:
         fig,myax = plt.subplots()
-        
-    fpr,tpr,_ = metrics.roc_curve(y_true, y_pred)
-    auc = np.trapz(tpr,fpr)
+    
+    fpr,tpr,auc = get_rocauc(y_true, y_pred)
     
     myax.plot(fpr, tpr, lw=2)
     myax.set(aspect='equal', xlabel='FPR', ylabel='TPR')
