@@ -14,6 +14,8 @@ import alt_models
 # CSV file generated is in a "long" format with columns
 # year | match_id | match_victor | total_sets | set_no | model_name | model_prediction
 
+EXPORT_RESULTS = False
+
 # TODO: move to tennis_data as another loader function?
 _year = []
 _to_concat = []
@@ -43,13 +45,14 @@ matches = df['match_id'].unique()
 
 #
 
-columns =  ["year" , "match_id", "match_victor" , "total_sets" , "set_no", "model_name", "model_prediction"]
+columns =  ["year" , "match_id", "program", "match_victor" , "total_sets" , "set_no", "model_name", "model_prediction"]
 #dtypes = ['str', 'str', 'str', 'int', 'int', 'str', 'str']
 rows = []
 # Main loop
 for match in matches:
     _df = df[df['match_id'] == match]
     yr = _df['year'].iloc[0]
+    program = _df['program'].iloc[0]
     match_victor = _df['set_victor'].iloc[-1]
     final_set_no = _df['set_no'].max()
     
@@ -63,6 +66,7 @@ for match in matches:
             rows.append([
                 yr,
                 match,
+                program,
                 match_victor,
                 final_set_no,
                 i+1,
@@ -77,7 +81,7 @@ df_predictions['set_no'] = df_predictions['set_no'].astype(int)
 #
 df_predictions['sets_until_end'] = df_predictions['total_sets'] - df_predictions['set_no']
 
-if True:
+if EXPORT_RESULTS:
     import datetime
     dt = datetime.datetime.now()
     tstamp = dt.strftime('%d-%b-%Y-%H:%M').upper()
