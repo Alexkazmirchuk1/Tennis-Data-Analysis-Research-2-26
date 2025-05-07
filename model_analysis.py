@@ -1,10 +1,11 @@
 import pandas as pd
 import matplotlib
 from matplotlib import pyplot as plt
+from matplotlib import ticker
 import seaborn as sns
 
-#import matplotlib
-#matplotlib.use('Qt5Agg')
+import matplotlib
+matplotlib.use('Qt5Agg')
 
 plt.rcParams.update({'font.size': 14})
 
@@ -32,8 +33,8 @@ colors = {
     'Cumul. Unf. Error': plt.cm.tab10(4),
     'Dynamic Model': '#000',
     #
-    'M': '#909',
-    'W': '#0b0'
+    'Men\'s': '#909',
+    'Women\'s': '#0b0'
 }
 
 
@@ -47,6 +48,8 @@ order=[
 ]
 
 #####
+
+df['program'].replace({'M':'Men\'s', 'W':'Women\'s'}, inplace=True)
 
 # 
 # Question 1: across all matches, regardless of total number of matches, 
@@ -76,7 +79,10 @@ for axi in fg.axes.flatten():
     axi.set_title('')
     axi.axhline(0.5, c='#f00', ls='--', lw=0.5)
     axi.axhline(1, c='#333', ls='--', lw=0.5)
-    axi.set(ylim=[0.2,1.05], xlim=[0.95,5.05], xticks=[1,2,3,4,5])
+    axi.set(ylim=[0.3,1.05], xlim=[0.95,5.05], xticks=[1,2,3,4,5])
+    axi.yaxis.set_major_locator(ticker.MultipleLocator(0.1))
+    axi.spines['bottom'].set_visible(False)
+    axi.grid(visible=True, which='major', axis='y', ls='--', lw=0.5)
 
 fg.set_titles('{col_name}', loc='left', zorder=100)
 
@@ -100,7 +106,9 @@ for axi in fg2.axes.flatten():
     axi.set_title('')
     axi.axhline(0.5, c='#f00', ls='--', lw=0.5)
     axi.axhline(1, c='#333', ls='--', lw=0.5)
-    axi.set(ylim=[0.2,1.05], xlim=[0.95, 5.05], xticks=[1,2,3,4,5])
+    axi.set(ylim=[0.3,1.05], xlim=[0.95, 5.05], xticks=[1,2,3,4,5])
+    axi.spines['bottom'].set_visible(False)
+    axi.grid(visible=True, which='major', axis='y', ls='--', lw=0.5)
 
 fg2.set_titles('{col_name}', loc='left')
 
@@ -124,7 +132,9 @@ for axi in fg3.axes.flatten():
     axi.set_title('')
     axi.axhline(0.5, c='#f00', ls='--', lw=0.5)
     axi.axhline(1, c='#333', ls='--', lw=0.5)
-    axi.set(ylim=[0.2,1.05], xlim=[-4.05,0.05], xticks=[-4,-3,-2,-1,0])
+    axi.set(ylim=[0.3,1.05], xlim=[-4.05,0.05], xticks=[-4,-3,-2,-1,0])
+    axi.spines['bottom'].set_visible(False)
+    axi.grid(visible=True, which='major', axis='y', ls='--', lw=0.5)
 
 fg3.set_titles('{col_name}', loc='left')
 
@@ -154,7 +164,9 @@ for axi in fg4.axes.flatten():
     axi.set_title('')
     axi.axhline(0.5, c='#f00', ls='--', lw=0.5)
     axi.axhline(1, c='#333', ls='--', lw=0.5)
-    axi.set(ylim=[0.2,1.05], xlim=[-4.05,0.05], xticks=[-4,-3,-2,-1,0])
+    axi.set(ylim=[0.3,1.05], xlim=[-4.05,0.05], xticks=[-4,-3,-2,-1,0])
+    axi.spines['bottom'].set_visible(False)
+    axi.grid(visible=True, which='major', axis='y', ls='--', lw=0.5)
 
 fg4.set_titles('{col_name}', loc='left')
 
@@ -164,8 +176,8 @@ if True:
     # force the figures to have the same layout as the first.
 
     for fgi in [fg,fg2,fg3,fg4]:
-        fgi.add_legend(loc='upper right', frameon=True, edgecolor='k')
-        fgi.figure.subplots_adjust(right=0.89)
+        fgi.add_legend(loc='center right', frameon=True, edgecolor='k')
+        fgi.figure.subplots_adjust(right=0.82)
         
         #fgi.figure.show()
 #

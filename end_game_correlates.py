@@ -42,7 +42,7 @@ def clean_aucroc_plot(y_true, y_pred, predictor_str, myax=None):
     myax.grid(True, which='major', lw=1)
     
     fill_color = plt.cm.tab10(0)
-    fill_color = np.array(fill_color)**0.25 # lighten
+    fill_color = plt.cm.tab20(1)
     myax.fill_between(fpr, tpr, facecolor=fill_color, alpha=0.5)
     
     myax.set_aspect('equal')
