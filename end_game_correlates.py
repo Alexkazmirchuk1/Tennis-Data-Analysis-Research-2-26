@@ -5,6 +5,9 @@ from matplotlib import ticker
 from sklearn import metrics
 import tennis_data as td
 
+import matplotlib
+matplotlib.use('Qt5Agg')
+
 # Load and prepare data
 df_2021 = td.load_2021()
 df_2022 = td.load_2022()
@@ -25,7 +28,7 @@ def clean_aucroc_plot(y_true, y_pred, predictor_str, myax=None):
     
     fpr, tpr, auc = get_rocauc(y_true, y_pred)
     
-    myax.plot(fpr, tpr, lw=2, label=f'AUC = {auc:.3f}')
+    myax.plot(fpr, tpr, lw=2)
     myax.set(aspect='equal', xlabel='FPR', ylabel='TPR')
     myax.set_title(predictor_str + f' (AUC$={auc:.3})$', loc='left')
     myax.xaxis.set_major_locator(ticker.MultipleLocator(1))
@@ -43,7 +46,6 @@ def clean_aucroc_plot(y_true, y_pred, predictor_str, myax=None):
     fill_color = plt.cm.tab20(1)
     myax.fill_between(fpr, tpr, facecolor=fill_color, alpha=0.5)
     
-    myax.legend(loc='lower right')
     myax.set_aspect('equal')
     return myax
 
@@ -112,7 +114,7 @@ df_summary['p2_wins'] = (df_summary['sets2'] > df_summary['sets1']).astype(int)
 
 # Prepare the ROC AUC plots and horizontal bar chart in one row
 fig, axs = plt.subplots(1, 3, figsize=(18, 6), constrained_layout=True)
-fig.subplots_adjust(wspace=0.3)
+#fig.subplots_adjust(wspace=0.3)
 
 # Plot the ROC AUC curves for 'Point differential' and 'Game differential'
 for i, metric in enumerate(['Point Differential', 'Game Differential']):
@@ -132,30 +134,42 @@ for metric in metrics_list:
     _, _, auc = get_rocauc(df_summary['p2_wins'], df_summary[metric])
     auc_values.append(auc)
 
+#
+metrics_list_abbrv = [' '.join(li.split()[:-1]+['Diff.']) for li in metrics_list]
+
 # Combine, sort (highest first), then reverse the order for horizontal bar chart 
-auc_data = list(zip(metrics_list, auc_values))
+auc_data = list(zip(metrics_list_abbrv, auc_values))
 auc_data.sort(key=lambda x: x[1], reverse=True)
 sorted_metrics, sorted_auc = zip(*auc_data)
 sorted_metrics = list(sorted_metrics)[::-1]  # reverse for horizontal bar chart (highest at top)
 sorted_auc = list(sorted_auc)[::-1]
 
 # Plot the horizontal bar chart of ROC AUC values
-bars = axs[2].barh(sorted_metrics, sorted_auc, color=plt.cm.tab10(0), alpha=0.8)
+bars = axs[2].barh(sorted_metrics, sorted_auc, color=plt.cm.tab20(1))
 
 # Annotate the bars with the AUC values
 for bar in bars:
     width = bar.get_width()
-    axs[2].annotate(f'{width:.3f}', 
-                    xy=(width, bar.get_y() + bar.get_height() / 2),
-                    xytext=(3, 0),  # small horizontal offset
-                    textcoords="offset points",
-                    ha='left', va='center', fontsize=10, fontweight='bold')
+    if False:
+        axs[2].annotate(f'{width:.3f}', 
+                        xy=(width, bar.get_y() + bar.get_height() / 2),
+                        xytext=(3, 0),  # small horizontal offset
+                        textcoords="offset points",
+                        ha='left', va='center', fontsize=10, fontweight='bold')
 
-axs[2].set_xlabel('AUC Value', fontsize=12)
-axs[2].set_title('ROC AUC Values for Differential Metrics', fontsize=10, fontweight='bold')
-axs[2].set_xlim(0, 1)
-axs[2].grid(axis='x', linestyle='--', alpha=0.7)
+axs[2].set(xlabel='AUC value', xlim=[0,1])
+axs[2].set_title('AUC values for other metrics', loc='left')
+#axs[2].set_xlabel('AUC Value', fontsize=12)
+#axs[2].set_title('ROC AUC Values for Differential Metrics', fontsize=10, fontweight='bold')
+#axs[2].set_xlim(0, 1)
+axs[2].grid(axis='x', linestyle='--', zorder=-100)
+#axs[2].set_aspect('equal')
+
+# why do i need to force this...
+a0b = axs[0].get_position().bounds
+a2b = axs[2].get_position().bounds
+#axs[2].set_position([a2b[0], a0b[1], a2b[2], a0b[3]])
 
 fig.savefig('output/combined_plots.pdf', bbox_inches='tight')
 
-plt.show()
+fig.show()
