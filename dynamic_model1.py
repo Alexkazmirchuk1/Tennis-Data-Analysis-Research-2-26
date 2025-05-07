@@ -502,7 +502,7 @@ if __name__=="__main__":
 
     import tennis_data
     
-    raw_data = tennis_data.load_2023()
+    raw_data = tennis_data.load_2024()
     MATCHES_TO_EXAMINE = raw_data['match_id'].unique()
 
     # MATCHES_TO_EXAMINE = tennis_data.five_sets_2021
@@ -569,5 +569,3 @@ if __name__=="__main__":
     ##
 
     print(results.T)
-
-
