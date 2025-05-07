@@ -498,7 +498,8 @@ if __name__=="__main__":
     import matplotlib.pyplot as plt
     import itertools # for shortening double-loop code.
 
-    plt.style.use('ggplot')
+    #plt.style.use('ggplot')
+    from figstyle import *
 
     import tennis_data
     

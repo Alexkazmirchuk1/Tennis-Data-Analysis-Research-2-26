@@ -4,6 +4,8 @@ from matplotlib import pyplot as plt
 from matplotlib import ticker
 import numpy as np
 
+from figstyle import *
+
 # For the subplot image
 include_subplot = True
 

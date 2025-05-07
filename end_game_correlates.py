@@ -5,8 +5,8 @@ from matplotlib import ticker
 from sklearn import metrics
 import tennis_data as td
 
-import matplotlib
-matplotlib.use('Qt5Agg')
+
+from figstyle import *
 
 # Load and prepare data
 df_2021 = td.load_2021()

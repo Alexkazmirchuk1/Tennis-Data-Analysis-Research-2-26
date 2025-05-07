@@ -1,7 +1,5 @@
 import numpy as np
 import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
 import tennis_data
 
 class MatchStats:
@@ -351,6 +349,9 @@ def evaluate_models(df_raw, matches):
 
 
 if __name__ == "__main__":
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+    
     # Example on just one year of data.
     import dynamic_model1 as dm1
     
@@ -418,7 +419,7 @@ if __name__ == "__main__":
                 })], ignore_index=True)
     
     fig,ax = plt.subplots(figsize=(12,7))
-    #plt.figure(figsize=(12, 7))
+    
     sns.lineplot(data=plot_data, x='Set', y='Percentage', hue='Model', marker='o', ax=ax)
     ax.set(title='Model Prediction Accuracy by Set', ylim=[0,100], xlabel='Set', ylabel='Percentage Correct')
 

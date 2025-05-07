@@ -4,10 +4,7 @@ from matplotlib import pyplot as plt
 from matplotlib import ticker
 import seaborn as sns
 
-import matplotlib
-matplotlib.use('Qt5Agg')
-
-plt.rcParams.update({'font.size': 14})
+from figstyle import *
 
 #########
 SAVE_FIGURES = True
